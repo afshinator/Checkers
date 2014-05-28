@@ -6,6 +6,8 @@ var checkers = (function ($, my) {
 		var capturedBlacks = 0;			// 
 		var capturedReds = 0;
 
+		
+
 		var pos = function(nonZeroIndex) {			// Compenstate for array index; syntactic sugar!
 			return position[nonZeroIndex - 1];		// 
 		};
