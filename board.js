@@ -106,7 +106,8 @@ var checkers = (function (my) {
 
 			for ( property in squares[whichSquare] ) {
 				if ( property !== 'occupier' && squares[whichSquare][property] !== null ) {
-					if ( !isCrowned && property !== excludeX && property !== excludeY ) {
+					if ( isCrowned ||
+						( !isCrowned && property !== excludeX && property !== excludeY ) ) {
 						validMoves.push(squares[whichSquare][property]);
 					}
 					
