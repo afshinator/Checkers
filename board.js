@@ -40,7 +40,7 @@ var checkers = (function (my) {
 			'21' : { ul : null, ur: '17', ll: null, lr: '25' },
 			'22' : { ul : '17', ur: '18', ll: '25', lr: '26' },
 			'23' : { ul : '18', ur: '19', ll: '26', lr: '27' },
-			'24' : { ul : '19', ur: '20', ll: '27', lr: '28' },	
+			'24' : { ul : '19', ur: '20', ll: '27', lr: '28' },
 
 			'25' : { ul : '21', ur: '22', ll: '29', lr: '30' },
 			'26' : { ul : '22', ur: '23', ll: '30', lr: '31' },
@@ -67,7 +67,7 @@ var checkers = (function (my) {
 		};
 
 
-		var consoleLog = function(justIndex) {
+		var consoleLog = function( justIndex ) {
 			var result = "";
 
 			for ( var i = 0; i < 32; i += 1 ) {
@@ -90,25 +90,48 @@ var checkers = (function (my) {
 		};
 
 
-		// Based on whose turn it is,  go through all the pieces for that player and see
-		// if a jump over opponent is available.  Take it if it is and return true; else false.
-		var checkForAndTakeJump = function(isPlayerATurn) {  // return true if jump available??
-			var isCrowned = false;
-			var regex = isPlayerATurn ? /a|A/ : /b|B/;
-			var who;
-			var isCrowned;
+		var getValidMoves = function( whichSquare, who ) {
+			var isCrowned = ( who === 'A' || who === 'B') ? true : false;
+			var property;
+			var excludeX, excludeY;
+			var validMoves = [];
 
-			for ( i = 1; i <=32; i += 1 ) {
-				who = squares[i].occupier;
-				if ( who !== emptySquare ) {
-					isCrowned = regex.match(who);
-
-					//make a list of valid directions player can move in, check whats in that dir
-					if ( squares[i].ul )
-
+			if ( ! isCrowned ) {
+				if ( who === 'a' ) {
+					excludeX = 'ur';  excludeY = 'ul';
+				} else {
+					excludeX = 'lr';  excludeY = 'll';
 				}
 			}
 
+			for ( property in squares[whichSquare] ) {
+				if ( property !== 'occupier' && squares[whichSquare][property] !== null ) {
+					if ( !isCrowned && property !== excludeX && property !== excludeY ) {
+						validMoves.push(squares[whichSquare][property]);
+					}
+					
+				}
+			}
+
+			return validMoves;
+		};
+
+
+		// Based on whose turn it is,  go through all the pieces for that player and see
+		// if a jump over opponent is available.  Take it if it is and return true; else false.
+		var checkForAndTakeJump = function( isPlayerATurn ) {  // return true if jump available??
+			var who;
+			var isCrowned;
+			var validMoves = [];
+
+			for ( i = 1; i <= 32; i += 1 ) {
+				who = squares[i].occupier;
+				if ( who !== emptySquare ) {
+					validMoves = getValidMoves( i, who );
+					// see if contents of valid moves are opponent
+					// see if opponent containing moves have a free square to make a jump to
+				}
+			}
 		};
 
 
