@@ -118,16 +118,25 @@ var checkers = (function (my) {
 		};
 
 
+		var isA = function( who ) {
+			if ( who === 'a' || who === 'A' ) return true;
+			return false;
+		};
+
+
 		// Based on whose turn it is,  go through all the pieces for that player and see
 		// if a jump over opponent is available.  Take it if it is and return true; else false.
 		var checkForAndTakeJump = function( isPlayerATurn ) {  // return true if jump available??
 			var who;
 			var isCrowned;
 			var validMoves = [];
+			var correctSide;
+
 
 			for ( i = 1; i <= 32; i += 1 ) {
 				who = squares[i].occupier;
-				if ( who !== emptySquare ) {
+				correctSide = ( who !== emptySquare ) && ( ( isPlayerATurn && isA(who) ) || ( !isPlayerATurn && !isA(who) ) );
+				if ( correctSide ) {
 					validMoves = getValidMoves( i, who );
 					// see if contents of valid moves are opponent
 					// see if opponent containing moves have a free square to make a jump to
