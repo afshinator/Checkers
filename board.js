@@ -54,6 +54,7 @@ var checkers = (function (my) {
 		};
 
 
+
 		var reset = function() {	// Mark 32 positions as either red, black, or empty.
 			for ( var i = 1; i <= 32; i += 1 ) {
 				if ( i <= 12 ) {
@@ -64,6 +65,30 @@ var checkers = (function (my) {
 					squares[i].occupier = "b";			// Bottom 3 rows are player B pieces
 				}
 			}
+
+		};
+
+
+		var seedBoard = function() {	// run after reset() to seed with test data
+			squares[1].occupier = emptySquare;
+			squares[2].occupier = 'a';
+			squares[3].occupier = emptySquare;
+			squares[4].occupier = emptySquare;
+			squares[5].occupier = 'b';
+			squares[6].occupier = emptySquare;
+			squares[6].occupier = emptySquare;
+			squares[7].occupier = 'B';
+			squares[8].occupier = emptySquare;
+			squares[9].occupier = emptySquare;
+			squares[12].occupier = emptySquare;
+			squares[14].occupier = 'b';
+			squares[18].occupier = 'b';
+			squares[17].occupier = 'a';
+			squares[23].occupier = 'a';
+			squares[25].occupier = emptySquare;
+			squares[28].occupier = emptySquare;
+			squares[31].occupier = emptySquare;
+			squares[32].occupier = emptySquare;
 		};
 
 
@@ -90,7 +115,7 @@ var checkers = (function (my) {
 		};
 
 
-		var getValidMoves = function( whichSquare, who ) {
+		var getAListOfValidMoves = function( whichSquare, who ) {
 			var isCrowned = ( who === 'A' || who === 'B') ? true : false;
 			var property;
 			var excludeX, excludeY;
@@ -123,6 +148,24 @@ var checkers = (function (my) {
 			return false;
 		};
 
+		var myOpponent = function ( me ) {
+			return  isA(me) ? 'b' : 'a';
+		};
+
+		var isMyOpponent = function ( me, other ) {
+			return ( isA(me) && !isA(other) ) || ( !isA(me) && isA(other) ) ;
+		};
+
+		var myOpponentIsIn = function( me, where ) {
+			return isMyOpponent( me, squares[where].occupier );
+		};
+
+
+		var processValidMoves = function( vm, fn, who ) {
+			for ( var j = 0; j < vm.length; j += 1 ) {
+				fn( vm[j], who );
+			}
+		};
 
 		// Based on whose turn it is,  go through all the pieces for that player and see
 		// if a jump over opponent is available.  Take it if it is and return true; else false.
@@ -131,13 +174,20 @@ var checkers = (function (my) {
 			var isCrowned;
 			var validMoves = [];
 			var correctSide;
+			var msg = function(square, who) {
+					if ( isMyOpponent(square.occupier, who) ) {
+						console.log( 'I am an opponent of ' + who + ' in square ' + square );
+					}
+				};
 
 
 			for ( i = 1; i <= 32; i += 1 ) {
 				who = squares[i].occupier;
 				correctSide = ( who !== emptySquare ) && ( ( isPlayerATurn && isA(who) ) || ( !isPlayerATurn && !isA(who) ) );
 				if ( correctSide ) {
-					validMoves = getValidMoves( i, who );
+					validMoves = getAListOfValidMoves( i, who );
+					processValidMoves( validMoves, msg, who );
+
 					// see if contents of valid moves are opponent
 					// see if opponent containing moves have a free square to make a jump to
 				}
@@ -147,7 +197,10 @@ var checkers = (function (my) {
 
 		return {
 			reset : reset,
-			show : consoleLog
+			seed: seedBoard,
+			show : consoleLog,
+			processVM : processValidMoves,
+			getValidMoves: getAListOfValidMoves
 		};
 
 	})();
