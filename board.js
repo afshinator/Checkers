@@ -81,7 +81,7 @@ var checkers = (function (my) {
 						result +=  ( " " + (i+1)  );
 					}
 				} else {		// Show whats in this position
-					result +=  ( " " + squares[i].occupier + " " );
+					result +=  ( " " + squares[i+1].occupier + " " );
 				}
 				if ( i % 8 !== 3  ) result += "...";	// Add empty spot unless we're on odd lines
 			}
