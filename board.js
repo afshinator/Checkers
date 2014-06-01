@@ -80,7 +80,7 @@ var checkers = (function (my) {
 			squares[8].occupier = emptySquare;
 			squares[9].occupier = emptySquare;
 			squares[12].occupier = emptySquare;
-			squares[14].occupier = 'b';
+			squares[14].occupier = emptySquare;
 			squares[18].occupier = emptySquare;
 			squares[17].occupier = 'a';
 			squares[21].occupier = emptySquare;
@@ -189,6 +189,38 @@ var checkers = (function (my) {
 		};
 
 
+		var allJumpMoves = function( fromWhichSquare ) {
+			var fn = function(keyVal, squareIndex) {
+					var sideInPlay = whichSideIs( squareIndex );
+					var direction = Object.keys(keyVal)[0];				// direction keyVal square is from 'fromWhichSquare'
+					var sqIndex = keyVal[direction];
+					var tempObj;
+
+					if ( isMyOpponent( squares[squareIndex].occupier, squares[sqIndex].occupier ) )  {
+console.log('sqIndex ' + sqIndex + ' - direction' + direction);
+						if ( squares[sqIndex][direction] !== null && squares[ squares[sqIndex][direction] ].occupier === emptySquare  ) {
+							tempObj = {};
+							tempObj[direction] = squares[sqIndex][direction];
+							return tempObj;
+						}
+					}
+
+
+					return null;
+				};
+
+			var moveList = getAllMoves ( fromWhichSquare );
+			var processedList = processMoves( moveList, fn, fromWhichSquare );
+
+			for ( var i = 0; i < processedList.length; i += 1 ) {
+				console.log( fromWhichSquare + ' __>: len ' + processedList.length + "-" +  processedList[i][Object.keys(processedList[i])[0]]);
+			}
+
+			return processedList;
+		};
+
+
+
 		var allBasicMoves = function( fromWhichSquare ) {
 			var fn = function(keyVal, squareIndex) {
 					var sideInPlay = whichSideIs( squareIndex );
@@ -255,6 +287,7 @@ console.log('i: ' + i + '---whichside:' + occupier + '---length of test :' + tes
 			process : processMoves,
 			check: checkForAndTakeJump,
 			moves : allBasicMoves,
+			jmoves: allJumpMoves,
 			getPossibleMoves: getAllMoves,
 			go: go
 		};
@@ -264,7 +297,6 @@ console.log('i: ' + i + '---whichside:' + occupier + '---length of test :' + tes
 	return my;
 
 }( checkers || {} ));
-
 
 
 var checkers = (function (my) {
@@ -304,6 +336,10 @@ var checkers = (function (my) {
 
 		var start = function() {
 			init();
+
+			my.board.jmoves( 23 );	// 30
+            my.board.jmoves( 26 );  // 19
+            my.board.jmoves( 7 );  //  14
 
 //			while ( aliveAs > 0 && aliveBs > 0 ) {
 
