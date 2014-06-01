@@ -119,15 +119,20 @@ var checkers = (function (my) {
 		};
 
 
-		var getAListOfValidMoves = function( whichSquare, whichSide ) {
-			var isCrowned = ( whichSide === 'A' || whichSide === 'B') ? true : false;
+
+		// Return a list of all possible moves from square by the player occupying it; list is tagged by direction 
+		// that the move is in.  
+		// After you get the list form this function, filter out what you want.
+		var getAllMoves = function( whichSquare ) {
+			var player = squares[whichSquare].occupier;
+			var isCrowned = ( player === 'A' || player === 'B') ? true : false;
 			var property;
 			var excludeX, excludeY;
-			var validMoves = [];
+			var moves = [];
 			var tempObj;
 
 			if ( ! isCrowned ) {
-				if ( whichSide === 'a' ) {
+				if ( player === 'a' ) {
 					excludeX = 'ur';  excludeY = 'ul';
 				} else {
 					excludeX = 'lr';  excludeY = 'll';
@@ -140,13 +145,19 @@ var checkers = (function (my) {
 						( !isCrowned && property !== excludeX && property !== excludeY ) ) {
 						tempObj = {};
 						tempObj[property] = squares[whichSquare][property];
-						validMoves.push( tempObj );
+						moves.push( tempObj );
 					}
 					
 				}
 			}
 
-			return validMoves;
+			return moves;
+		};
+
+		var whichSideIs = function( squareIndex ) {
+			occupier = squares[squareIndex].occupier;
+			if (  occupier === 'a' || occupier === 'A' ) { return 'a'; }
+			else return 'b';
 		};
 
 
@@ -165,50 +176,64 @@ var checkers = (function (my) {
 		};
 
 
-		var processValidMoves = function( vm, fn, whichSide ) {
-			var result = [];
+		var processMoves = function( moveList, fn, fromWhichSquare ) {
+			var processed = [];
+			var result;
 
-			for ( var j = 0; j < vm.length; j += 1 ) {
-				result.push( fn( vm[j], whichSide ) );
+			for ( var j = 0; j < moveList.length; j += 1 ) {
+				result = fn( moveList[j], fromWhichSquare );
+				if ( result !== null ) processed.push( result );
 			}
 
-			return result;
+			return processed;
 		};
 
-/*
-		var whichDirectionIsOtherFromMe = function( me, other ) {
 
+		var allBasicMoves = function( fromWhichSquare ) {
+			var fn = function(keyVal, squareIndex) {
+					var sideInPlay = whichSideIs( squareIndex );
+					var direction = Object.keys(keyVal)[0];				// direction keyVal square is from 'fromWhichSquare'
+
+					if ( squares[keyVal[direction]].occupier === emptySquare )
+						return keyVal;
+
+					return null;
+				};
+
+			var moveList = getAllMoves ( fromWhichSquare );
+
+			var basicMoves = processMoves( moveList, fn, fromWhichSquare );
 
 		};
-*/
+
 
 		// Based on whose turn it is,  go through all the pieces for that player and see
 		// if a jump over opponent is available.  Take it if it is and return true; else false.
 		var checkForAndTakeJump = function( isPlayerATurn ) {  // return true if jump available??
-			var whichSide;
+			var occupier;
 			var isCrowned;
-			var validMoves = [],
+			var moveList = [],
 				test = [];
 			var correctSide;
-			var msg = function(keyVal, sideInPlay) {
+			var msg = function(keyVal, squareIndex) {
+					var sideInPlay = whichSideIs( squareIndex );
 					var direction = Object.keys(keyVal)[0];
 					if ( isMyOpponent( sideInPlay, squares[keyVal[direction]].occupier ) ) {
-						console.log( 'an opponent of ' + sideInPlay + ' in square ' + keyVal[direction] );
-						if ( squares[keyVal[direction]][direction] === emptySquare )
-							return square;
+						console.log( 'an opponent of ' + squareIndex + ' in square ' + keyVal[direction] );
+						return keyVal;
 					}
-					
+					return null;
 				};
 
 
 			for ( i = 1; i <= 32; i += 1 ) {
-				whichSide = squares[i].occupier;
-				correctSide = ( whichSide !== emptySquare ) && ( ( isPlayerATurn && isA(whichSide) ) || ( !isPlayerATurn && !isA(whichSide) ) );
+				occupier = squares[i].occupier;
+				correctSide = ( occupier !== emptySquare ) && ( ( isPlayerATurn && isA(occupier) ) || ( !isPlayerATurn && !isA(occupier) ) );
 				if ( correctSide ) {
-					validMoves = getAListOfValidMoves( i, whichSide );
-console.log('i: ' + i + '---whichside:' + whichSide + '---length of validMoves :' + validMoves.length );
-					test = processValidMoves( validMoves, msg, whichSide );
-console.log('i: ' + i + '---whichside:' + whichSide + '---length of test :' + test.length );
+					moveList = getAllMoves( i );
+console.log('i: ' + i + '---whichside:' + occupier + '---length of moveList :' + moveList.length );
+					test = processMoves( moveList, msg, i );
+console.log('i: ' + i + '---whichside:' + occupier + '---length of test :' + test.length );
 					
 				}
 			}
@@ -224,9 +249,9 @@ console.log('i: ' + i + '---whichside:' + whichSide + '---length of test :' + te
 			reset : reset,
 			seed: seedBoard,
 			show : consoleLog,
-			processVM : processValidMoves,
+			process : processMoves,
 			check: checkForAndTakeJump,
-			getValidMoves: getAListOfValidMoves,
+			getPossibleMoves: getAllMoves,
 			go: go
 		};
 
