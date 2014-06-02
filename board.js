@@ -189,7 +189,7 @@ var checkers = (function (my) {
 		};
 
 
-		var allJumpMoves = function( fromWhichSquare ) {
+		var getJumpMoves = function( fromWhichSquare ) {
 			var fn = function(keyVal, squareIndex) {
 					var sideInPlay = whichSideIs( squareIndex );
 					var direction = Object.keys(keyVal)[0];				// direction keyVal square is from 'fromWhichSquare'
@@ -204,7 +204,6 @@ console.log('sqIndex ' + sqIndex + ' - direction' + direction);
 							return tempObj;
 						}
 					}
-
 
 					return null;
 				};
@@ -221,7 +220,7 @@ console.log('sqIndex ' + sqIndex + ' - direction' + direction);
 
 
 
-		var allBasicMoves = function( fromWhichSquare ) {
+		var getBasicMoves = function( fromWhichSquare ) {
 			var fn = function(keyVal, squareIndex) {
 					var sideInPlay = whichSideIs( squareIndex );
 					var direction = Object.keys(keyVal)[0];				// direction keyVal square is from 'fromWhichSquare'
@@ -240,6 +239,53 @@ console.log('sqIndex ' + sqIndex + ' - direction' + direction);
 			}
 
 			return unoccupiedList;
+		};
+
+
+
+
+		var getAllJumpMoves = function ( isPlayerATurn ) {
+			var occupier;
+			var correctSide;
+			var moveList = [],
+				jumpsList = [];
+
+			for ( i = 1; i <= 32; i += 1 ) {
+				occupier = squares[i].occupier;
+				correctSide = ( occupier !== emptySquare ) && ( ( isPlayerATurn && isA(occupier) ) || ( !isPlayerATurn && !isA(occupier) ) );
+				if ( correctSide ) {
+					moveList = getJumpMoves( i );
+					if ( moveList.length > 0 ) {
+						jumpsList = jumpsList.concat( moveList );
+					}
+				}
+			}
+
+			return jumpsList;
+		};
+
+
+
+
+		// Check to see if there is a move possible for passed in side a or b.
+		// Doesn't check for jump moves, just basic moves.
+		// Returns true if there's at least one possible move, else return false.
+		var playerHasAtLeastOnePossibleMove = function( isPlayerATurn ) {
+			var occupier;
+			var correctSide;
+			var moveList = [],
+				possibleMovesForThisPlayer = [];
+
+			for ( i = 1; i <= 32; i += 1 ) {
+				occupier = squares[i].occupier;
+				correctSide = ( occupier !== emptySquare ) && ( ( isPlayerATurn && isA(occupier) ) || ( !isPlayerATurn && !isA(occupier) ) );
+				if ( correctSide ) {
+					moveList = getBasicMoves( i );
+					if ( moveList.length > 0 ) return true;
+				}
+			}
+
+			return false;
 		};
 
 
@@ -288,6 +334,7 @@ console.log('i: ' + i + '---whichside:' + occupier + '---length of test :' + tes
 			check: checkForAndTakeJump,
 			moves : allBasicMoves,
 			jmoves: allJumpMoves,
+			movePossible : playerHasAtLeastOnePossibleMove,
 			getPossibleMoves: getAllMoves,
 			go: go
 		};
@@ -344,10 +391,11 @@ var checkers = (function (my) {
 //			while ( aliveAs > 0 && aliveBs > 0 ) {
 
 	
-			// check if current player has possible jumps; 
+			// check if current player has possible jumps;
 			// true do the jump(s) and change turns
 			// false
 			//		see if the player has available moves
+					if ( my.board.movePossible( playerATurn ) ) {
 			//		false -> changes turns
 			//		true
 			//			get who to move next, to where
