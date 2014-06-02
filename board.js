@@ -201,6 +201,8 @@ console.log('sqIndex ' + sqIndex + ' - direction' + direction);
 						if ( squares[sqIndex][direction] !== null && squares[ squares[sqIndex][direction] ].occupier === emptySquare  ) {
 							tempObj = {};
 							tempObj[direction] = squares[sqIndex][direction];
+							tempObj.from = squareIndex;							// extra attribute added here; where jumping from
+							tempObj.over = sqIndex;								// extra attribute added here; jumping over	which square
 							return tempObj;
 						}
 					}
@@ -289,9 +291,56 @@ console.log('sqIndex ' + sqIndex + ' - direction' + direction);
 		};
 
 
+		var doJump = function( from, over, to, isPlayerATurn ) {
+			var fromOccupier = squares[from].occupier;
+			var toOccupier = squares[to].occupier;
+			var correctSide = ( fromOccupier !== emptySquare ) && ( ( isPlayerATurn && isA(fromOccupier) ) || ( !isPlayerATurn && !isA(fromOccupier) ) );
+			var killedOffPiece;
+
+			if ( !correctSide || toOccupier !== emptySquare ) return false;
+			else {
+				squares[to].occupier = fromOccupier;
+				squares[from].occupier = emptySquare;
+				killPlayerAt( over );
+			}
+
+			return true;
+		};
+
+		var doMove = function( from, to, isPlayerATurn ) {			// todo: refactor w/ above function
+			var fromOccupier = squares[from].occupier;
+			var toOccupier = squares[to].occupier;
+			var correctSide = ( fromOccupier !== emptySquare ) && ( ( isPlayerATurn && isA(fromOccupier) ) || ( !isPlayerATurn && !isA(fromOccupier) ) );
+			
+			if ( !correctSide || toOccupier !== emptySquare ) return false;
+			else {
+				squares[to].occupier = fromOccupier;
+				squares[from].occupier = emptySquare;
+			}
+
+			return true;
+		};
+
+
+		var killPlayerAt = function ( squareIndex ) {
+			var who = squares[squareIndex].occupier;
+
+			if ( isA( who ) ) {
+				my.game.aliveAs -= 1;
+			} else {
+				my.game.aliveBs -= 1;
+			}
+
+			if ( my.game.aliveAs < 1 || my.game.aliveBs < 1 ) my.game.winner();
+
+			squares[squareIndex].occupier = emptySquare;
+		};
+
+
+
 		// Based on whose turn it is,  go through all the pieces for that player and see
 		// if a jump over opponent is available.  Take it if it is and return true; else false.
-		var checkForAndTakeJump = function( isPlayerATurn ) {  // return true if jump available??
+		var oldCheckForAndTakeJump = function( isPlayerATurn ) {  // return true if jump available??
 			var occupier;
 			var isCrowned;
 			var moveList = [],
@@ -321,22 +370,21 @@ console.log('i: ' + i + '---whichside:' + occupier + '---length of test :' + tes
 			}
 		};
 
-		var go = function() {
-			this.reset();
-			seed();
-		};
+
 
 		return {
 			reset : reset,
-			seed: seedBoard,
-			show : consoleLog,
+				seed: seedBoard,					// for testing
+			show : consoleLog,						// pass in true to see indexes
 			process : processMoves,
 			check: checkForAndTakeJump,
 			moves : allBasicMoves,
+			getAllJumpMoves: getAllJumpMoves,
 			jmoves: allJumpMoves,
 			movePossible : playerHasAtLeastOnePossibleMove,
 			getPossibleMoves: getAllMoves,
-			go: go
+			doJump: doJump,
+			doMove: doMove
 		};
 
 	})();
@@ -355,8 +403,10 @@ var checkers = (function (my) {
 			aliveBs;
 		var playerATurn = parseInt( Math.random() * 10, 10 ) % 2;	// Randomly select who starts
 
-		var getPlacementChoice = function() {
-			return prompt( "Your next move ?", "1-32");
+		var askForAndDoNextMove = function() {
+			from = parseInt( prompt( "Your next movement from : ", "1-32"), 10 );
+			to = parseInt( prompt ("move to: "), 10 );
+			my.board.doMove( from, to );
 		};
 
 		var init = function() {
@@ -366,7 +416,7 @@ var checkers = (function (my) {
 
 			my.board.seed();		// for testing
 
-			my.board.show(true);
+			my.board.show( true );
 			my.board.moves( 10 );
 			my.board.moves( 2 );	// 6
 			my.board.moves( 23 ); // 27	
@@ -376,10 +426,40 @@ var checkers = (function (my) {
 			my.board.moves( 11 );	// 15 & 16
 			my.board.moves( 25 );	// 21 & 22
 
-			my.board.show(false);
+			my.board.show( false );
 
 			gameStarted = true;
 		};
+
+
+
+		// If there is more than one jump available, ask which one to take, else take the 1 jump.
+		var checkForAndTakeAJump = function ( ) {
+			var availableJumps = my.board.getAllJumpMoves( playerATurn );
+			var howManyAvailableJumps;
+			var direction;
+
+			if ( availableJumps ) {
+				howManyAvailableJumps = availableJumps.length;
+
+				if ( howManyAvailableJumps > 1 ) {
+					// TODO: list of jumps, ask which one to take
+				} else {
+					direction =  Object.keys( availableJumps[0] )[0] !== "from" ? Object.keys( availableJumps[0] )[0] : Object.keys( availableJumps[0] )[1] ;
+					my.board.doJump( availableJumps[0].from, availableJumps[0].over, availableJumps[0][direction], playerATurn );
+				}
+				return true;
+			} else
+				return false;
+		};
+
+
+
+		var switchTurns = function() {
+			playerATurn = !playerATurn;
+		};
+
+
 
 		var start = function() {
 			init();
@@ -388,35 +468,39 @@ var checkers = (function (my) {
             my.board.jmoves( 26 );  // 19
             my.board.jmoves( 7 );  //  14
 
-//			while ( aliveAs > 0 && aliveBs > 0 ) {
+            mainGameLoop();
+            weHaveAWinner();
+		};
 
-	
-			// check if current player has possible jumps;
-			// true do the jump(s) and change turns
-			// false
-			//		see if the player has available moves
+
+		var mainGameLoop = function() {
+			while ( aliveAs > 0 && aliveBs > 0 && win === false ) {
+				// check if current player has possible jumps
+				if (  ! checkForAndTakeAJump() ) {
+					//		see if the player has available moves
 					if ( my.board.movePossible( playerATurn ) ) {
-			//		false -> changes turns
-			//		true
-			//			get who to move next, to where
-			// 			check to see if that piece can move to there
-			//			yes
-			//				do the move
-			//			no
-			// 				reset to get who to move next, to where
+						askForAndDoNextMove( playerATurn );
+					}
+				}
+
+				switchTurns();
+			}
+		};
 
 
-
-
-//			}
+		var weHaveAWinner = function() {
 
 		};
 
 
 		return {
 			begun : gameStarted,
+			aliveAs : aliveAs,
+			aliveBs : aliveBs,
 			playerATurn : playerATurn,
-			start : start
+			start : start,
+			switchTurns: switchTurns,
+			winner: weHaveAWinner
 		};
 
 	})();
