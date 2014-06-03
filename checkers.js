@@ -36,7 +36,7 @@ var checkers = (function (my) {
 		var start = function() {
 			init();
 
-//			while ( aliveAs > 0 && aliveBs > 0 ) {
+//			while ( aliveAs > 0 && aliveBs > 0 ) {   // gon get rid of this
 
 	
 			// check if current player has possible jumps; 
